@@ -1,0 +1,66 @@
+/* src/components/Side/PlayerSide.css */
+
+/* Área del lado del jugador
+   -> Tamaño controlado y anclado a la esquina.
+   -> El HUD se posiciona absoluto y NO depende del arte. */
+   .side.side--player {
+    --art-w: clamp(360px, 34vw, 460px);     /* tamaño del arte */
+    --art-h: clamp(360px, 34vw, 460px);
+    --menu-w: clamp(140px, 16vw, 220px);    /* ancho del HUD/menu */
+    --hud-gap: 10px;                         /* separación arte↔HUD */
+    --hud-height: clamp(220px, 28vh, 300px); /* alto del HUD para alinear HP */
+  
+    position: absolute;
+    right: 50px;
+    bottom: 50px;
+  
+    /* el contenedor abarca arte + gap + HUD */
+    width: calc(var(--art-w) + var(--hud-gap) + var(--menu-w));
+    height: max(var(--art-h), var(--hud-height));
+  }
+  
+  /* Arte anclado (no empuja al HUD) */
+  .side--player .side__art {
+    position: absolute;
+    left: 140px;
+    bottom: 0;
+    width: var(--art-w);
+    height: var(--art-h);
+    display: grid;
+    place-items: center;
+  }
+  .side--player .side__art img { width: 100%; height: 100%; object-fit: contain; }
+  
+  /* HUD fijo pegado al arte, alineado al borde derecho del lado */
+  .hud.hud--player {
+    position: absolute;
+    right: 30px;                      /* pegado al borde derecho del contenedor */
+    bottom: 40%;                     /* pegado al suelo del contenedor */
+    width: var(--menu-w);
+    height: var(--hud-height);
+    display: grid;
+    grid-template-rows: auto 1fr;  /* fila 1: HP / fila 2: menú */
+    align-items: start;
+    gap: 8px;
+    transform: translateX(-2px);   /* acerca aún más el menú al arte */
+  }
+  
+  /* HP arriba, centrado sobre el menú */
+  .hud--player > .hp-badge {
+    justify-self: center;
+    margin: 0;
+  }
+  
+  /* Menú abajo ocupando el resto del HUD */
+  .hud--player > .hud__menu {
+    align-self: end;
+  }
+  .hud--player .battle-menu {
+    width: 100%;
+  }
+  
+  /* Responsivo */
+  @media (max-width: 960px) {
+    .side.side--player { right: 32px; bottom: 56px; }
+  }
+  

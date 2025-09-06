@@ -1,6 +1,6 @@
 /* src/pages/NumenDuel.css */
 
-/* ===== Variables ===== */
+/* ===== Variables base (usadas por los hijos) ===== */
 :root {
   --pdv-red: #ff2b2b;
   --pdv-stroke: #ffffff;
@@ -8,11 +8,10 @@
   --panel-bg: rgba(0,0,0,.25);
   --panel-border: rgba(255,255,255,.12);
   --text: #f4f6ff;
-  --accent: #000000;                 /* borde negro del botón */
-  --hp-offset: clamp(90px, 10vw, 160px); /* cuánto “se sale” el número hacia afuera */
+  --hp-offset: clamp(90px, 10vw, 160px);
 }
 
-/* ===== Arena ===== */
+/* ===== Arena (fondo) ===== */
 .arena {
   position: relative;
   min-height: 100vh;
@@ -23,106 +22,6 @@
   color: var(--text);
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
 }
-
-/* ===== Cabecera ===== */
-.arena__exit {
-  position: absolute;
-  left: 16px; top: 16px;
-  font-weight: 700;
-  text-shadow: 0 2px 4px rgba(0,0,0,.5);
-  opacity: .9;
-}
-.arena__round {
-  position: absolute;
-  left: 50%; top: 24px;
-  transform: translateX(-50%);
-  text-align: center;
-  font-weight: 900;
-  letter-spacing: 1px;
-  text-shadow: 0 2px 0 #000, 0 0 8px rgba(0,0,0,.6);
-}
-.arena__round .title { display: block; font-size: clamp(28px, 4vw, 64px); line-height: 1; }
-.arena__round .num   { display: inline-block; font-size: clamp(24px, 3.5vw, 44px); line-height: 1; }
-
-/* ===== Lados (enemigo / jugador) ===== */
-.side {
-  position: absolute;
-  bottom: 120px;
-  display: grid;
-  align-items: end;
-  gap: 12px;
-}
-.side--enemy  { left: 200px;  grid-template-columns: auto auto; }
-.side--player { right: 200px; grid-template-columns: auto auto; }
-
-/* Arte del personaje (sin panel ni borde) */
-.side__art {
-  width: clamp(320px, 30vw, 520px);
-  height: clamp(320px, 30vw, 520px);
-  background: transparent;
-  border: none;
-  border-radius: 0;
-  display: grid; place-items: center;
-  overflow: visible;
-  box-shadow: none;
-}
-.side__art img {
-  width: 100%; height: 100%; object-fit: contain;
-}
-
-/* ===== HP grande estilo mockup (ABSOLUTO y hacia afuera) ===== */
-.hp-badge {
-  position: absolute;          /* <- ahora absoluto */
-  bottom: 0;                   /* pegado a la base del personaje */
-  display: inline-block;
-  padding: 6px 10px;
-  background: transparent;
-  font-weight: 900;
-  color: var(--pdv-red);
-  font-size: clamp(48px, 7vw, 96px);
-  -webkit-text-stroke: 6px var(--pdv-stroke);
-  text-shadow: 0 6px 20px var(--pdv-shadow);
-  z-index: 2;
-}
-.side--enemy .hp-badge  { left: calc(-1 * var(--hp-offset)); }  /* hacia la IZQUIERDA */
-.side--player .hp-badge { right: calc(-1 * var(--hp-offset)); } /* hacia la DERECHA */
-
-.hp-badge__unit {
-  position: absolute;
-  right: -34px; bottom: 8px;
-  font-size: .28em;
-  -webkit-text-stroke: 2px var(--pdv-stroke);
-  color: var(--pdv-red);
-}
-
-/* ===== Menú de acciones (blanco con sombra negra inclinada) ===== */
-.actions {
-  position: absolute;
-  right: 150px; top: 50%;
-  transform: translateY(-40%);
-  display: grid; gap: 14px;
-}
-.actions__btn {
-  position: relative;
-  padding: 14px 22px;
-  background: #ffffff;
-  color: rgb(255, 255, 255);
-  font-weight: 900;
-  border: 4px solid var(--accent);
-  clip-path: polygon(8% 0%, 100% 0, 100% 72%, 92% 100%, 0 100%, 0 28%);
-  text-transform: none;
-  letter-spacing: .5px;
-  cursor: pointer;
-}
-.actions__btn::before {
-  content: "";
-  position: absolute;
-  inset: 6px -10px -10px 6px;
-  background: var(--accent);
-  clip-path: inherit;
-  z-index: -1;
-}
-.actions__btn:disabled { opacity: .55; cursor: not-allowed; }
 
 /* ===== Log ===== */
 .log {
@@ -139,47 +38,3 @@
   color: #e8eefc;
 }
 .log p { margin: 4px 0; opacity: .95; }
-
-/* ===== Animaciones (si ya las añadiste) ===== */
-@keyframes meleePlayer {
-  0% { transform: translateX(0) scale(1); }
-  40%,55% { transform: translateX(-140px) scale(1.05); }
-  100% { transform: translateX(0) scale(1); }
-}
-@keyframes meleeEnemy {
-  0% { transform: translateX(0) scale(1); }
-  40%,55% { transform: translateX(140px) scale(1.05); }
-  100% { transform: translateX(0) scale(1); }
-}
-@keyframes hitShake {
-  0%,100% { transform: translateX(0); }
-  20% { transform: translateX(-6px); }
-  40% { transform: translateX(6px); }
-  60% { transform: translateX(-3px); }
-  80% { transform: translateX(3px); }
-}
-.anim-melee-player { animation: meleePlayer 650ms cubic-bezier(.2,.6,.2,1) both; transform-origin: center bottom; }
-.anim-melee-enemy  { animation: meleeEnemy 650ms cubic-bezier(.2,.6,.2,1) both;  transform-origin: center bottom; }
-.is-hit { animation: hitShake 320ms ease-out; }
-
-/* ===== Util ===== */
-.hide { display: none !important; }
-
-/* ===== Responsivo ===== */
-@media (max-width: 1200px) {
-  .side--enemy  { left: 120px; }
-  .side--player { right: 120px; }
-  :root { --hp-offset: clamp(70px, 9vw, 130px); }
-}
-@media (max-width: 960px) {
-  .side { bottom: 96px; }
-  .actions { right: 20px; transform: translateY(-35%); }
-  :root { --hp-offset: clamp(60px, 10vw, 120px); }
-}
-@media (max-width: 720px) {
-  .side { bottom: 86px; }
-  .actions { right: 14px; transform: translateY(-30%); }
-  .arena__round .title { font-size: 28px; }
-  .arena__round .num   { font-size: 24px; }
-  :root { --hp-offset: clamp(45px, 12vw, 100px); }
-}

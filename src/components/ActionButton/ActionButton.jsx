@@ -1,6 +1,6 @@
 // src/components/ActionButton/ActionButton.jsx
 import { useMemo } from "react";
-import "./AxtionButton.css";
+import "./ActionButton.css";
 
 /**
  * Botón con skin SVG (estilos en ActionButton.css).

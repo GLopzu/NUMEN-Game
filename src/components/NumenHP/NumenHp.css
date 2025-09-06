@@ -1,0 +1,26 @@
+/* src/components/HP/NumenHP.css */
+.hp-badge {
+    position: relative;
+    display: inline-block;
+    padding: 4px 8px;
+    background: transparent;
+    font-weight: 900;
+    color: var(--pdv-red);
+    font-size: clamp(52px, 7.5vw, 96px);
+    -webkit-text-stroke: 6px var(--pdv-stroke);
+    text-shadow: 0 6px 20px var(--pdv-shadow);
+    line-height: 1;
+    z-index: 4;
+  }
+  .hp-badge__unit {
+    position: absolute;
+    right: -34px;
+    bottom: 10px;
+    font-size: .28em;
+    font-weight: 900;
+    letter-spacing: .5px;
+    color: var(--pdv-red);
+    -webkit-text-stroke: 2px var(--pdv-stroke);
+    text-shadow: 0 3px 8px var(--pdv-shadow);
+  }
+  
