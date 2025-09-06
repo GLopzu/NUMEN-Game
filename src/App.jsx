@@ -1,12 +1,7 @@
-import {Provider} from 'react-redux'
+// src/App.jsx
 import Router from './router/Router.jsx'
 import './App.css'
 
-function App() {
-
-  return (
-      <Router />
-  )
-};
-
-export default App
+export default function App() {
+  return <Router />
+}
