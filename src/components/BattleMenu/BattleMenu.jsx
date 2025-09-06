@@ -13,17 +13,40 @@ export default function BattleMenu({
 }) {
   return (
     <div className="battle-menu">
-      <button className="btn" onClick={canAttack ? onAttack : undefined} disabled={!canAttack}>
-        Ataque
+      <button
+        className="btn"
+        onClick={canAttack ? onAttack : undefined}
+        disabled={!canAttack}
+        aria-disabled={!canAttack}
+      >
+        <span className="btn__label">Ataque</span>
       </button>
-      <button className="btn" onClick={canSkills ? onSkills : undefined} disabled={!canSkills}>
-        Habilidades
+
+      <button
+        className="btn"
+        onClick={canSkills ? onSkills : undefined}
+        disabled={!canSkills}
+        aria-disabled={!canSkills}
+      >
+        <span className="btn__label">Habilidades</span>
       </button>
-      <button className="btn" onClick={canGuard ? onGuard : undefined} disabled={!canGuard}>
-        Guardia
+
+      <button
+        className="btn"
+        onClick={canGuard ? onGuard : undefined}
+        disabled={!canGuard}
+        aria-disabled={!canGuard}
+      >
+        <span className="btn__label">Guardia</span>
       </button>
-      <button className="btn" onClick={canSwitch ? onSwitch : undefined} disabled={!canSwitch}>
-        Relevo
+
+      <button
+        className="btn"
+        onClick={canSwitch ? onSwitch : undefined}
+        disabled={!canSwitch}
+        aria-disabled={!canSwitch}
+      >
+        <span className="btn__label">Relevo</span>
       </button>
     </div>
   );

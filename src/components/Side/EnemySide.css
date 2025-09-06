@@ -4,13 +4,13 @@
    -> Mismo bottom que el player para alinear HP.
    -> Alto del HUD idéntico al del player para alinear verticalmente. */
    .side.side--enemy {
-    --art-w: clamp(360px, 34vw, 560px);
-    --art-h: clamp(360px, 34vw, 560px);
+    --art-w: clamp(360px, 34vw, 660px);
+    --art-h: clamp(360px, 34vw, 660px);
     --hud-height: clamp(220px, 28vh, 300px);
   
     position: absolute;
     left: 100px;
-    bottom: 50px;
+    bottom: 80px;
   
     width: var(--art-w);
     height: max(var(--art-h), var(--hud-height));

@@ -7,6 +7,7 @@ import { getArena } from "../data/arenas";
 import BattleMenu from "../components/BattleMenu/BattleMenu";
 import PlayerSide from "../components/Side/PlayerSide";
 import EnemySide from "../components/Side/EnemySide";
+import CombatLog from "../components/Log/CombatLog";
 import useNumenAnim from "../components/Anim/useNumenAnim";
 
 import "./NumenDuel.css";
@@ -18,21 +19,15 @@ export default function NumenDuel() {
   const dispatch = useDispatch();
   const st = useSelector((s) => s.duel);
 
-  // Fondo/arena
   const arena = useMemo(() => getArena(ARENA_ID), []);
   const arenaSrc = arena?.src;
 
-  // === Arte dinámico por turno ===
-  // Jugador: si es su turno -> usar "select"; si no, "idle"
   const playerArt =
     (st.phase === "play" && st.turn === PLAYER
       ? st.player?.select || st.player?.idle
       : st.player?.idle || st.player?.select) || null;
-
-  // Enemigo: usar su arte de enemigo (o fallback a idle)
   const enemyArt = st.enemy?.Enemy || st.enemy?.idle || null;
 
-  // Ataques (dinámicos por Numen)
   const pAtk = st.player?.attacks?.[0] || null;
   const eAtk = st.enemy?.attacks?.[0] || null;
 
@@ -42,19 +37,17 @@ export default function NumenDuel() {
     pAtk &&
     (pAtk.uses ?? 0) > 0;
 
-  // Control de animaciones
   const playerAnim = useNumenAnim();
   const enemyAnim  = useNumenAnim();
 
   const doAttack = () => {
     if (!canAttack) return;
-    // anim: mi Numen avanza; enemigo recibe
     playerAnim.triggerMelee();
     enemyAnim.triggerHit();
     dispatch(attack(PLAYER));
   };
 
-  // IA enemiga: solo tras tu jugada (no al montar)
+  // IA: solo tras tu jugada (no al montar)
   const mounted = useRef(false);
   useEffect(() => {
     if (!mounted.current) { mounted.current = true; return; }
@@ -77,7 +70,6 @@ export default function NumenDuel() {
       className="arena"
       style={arenaSrc ? { backgroundImage: `url(${arenaSrc})` } : undefined}
     >
-      {/* Enemigo (izquierda) */}
       <EnemySide
         hp={st.enemy?.hp}
         art={enemyArt}
@@ -85,10 +77,9 @@ export default function NumenDuel() {
         anim={enemyAnim.anim}
       />
 
-      {/* Jugador (derecha) */}
       <PlayerSide
         hp={st.player?.hp}
-        art={playerArt}            // <<-- usa select en tu turno
+        art={playerArt}
         hit={playerAnim.hit}
         anim={playerAnim.anim}
       >
@@ -104,28 +95,13 @@ export default function NumenDuel() {
         />
       </PlayerSide>
 
-      {/* Log */}
-      <div className="log">
-        {st.phase === "play" ? (
-          <p>
-            Turno: <b>{st.turn}</b> · Usos restantes: <b>{usesLeft}</b>
-            {st.last && (
-              <>
-                {" "}· Última jugada: <b>{st.last.who}</b>
-                {st.last.flip ? ` (${st.last.flip})` : ""}
-                {typeof st.last.dmg === "number" ? ` · daño: ${st.last.dmg}` : ""}
-              </>
-            )}
-          </p>
-        ) : (
-          <p>
-            Ganador: <b>{st.winner}</b>{" "}
-            <button style={{ marginLeft: 8 }} onClick={() => dispatch(reset())}>
-              Reiniciar
-            </button>
-          </p>
-        )}
-      </div>
+      <CombatLog
+        phase={st.phase}
+        turn={st.turn}
+        usesLeft={usesLeft}
+        winner={st.winner}
+        onReset={() => dispatch(reset())}
+      />
     </main>
   );
 }
