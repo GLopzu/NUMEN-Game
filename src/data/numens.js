@@ -1,9 +1,10 @@
 // src/data/numens.js
-// Todas las rutas de imágenes siguen:
+// Estructura de assets por Numen (carpeta por nombre):
 // /assets/Numens/<Nombre>/<Nombre>.svg
 // /assets/Numens/<Nombre>/<Nombre>_select.svg
 // /assets/Numens/<Nombre>/<Nombre>_enemy.svg
 // /assets/Numens/<Nombre>/<Nombre>_Frame.svg
+// /assets/Numens/<Nombre>/<Nombre>_Relevo.svg
 
 const makeAssets = (ProperName) => {
   const folder = `/assets/Numens/${ProperName}`;
@@ -12,6 +13,7 @@ const makeAssets = (ProperName) => {
     select: `${folder}/${ProperName}_select.svg`,
     Enemy:  `${folder}/${ProperName}_enemy.svg`,
     frame:  `${folder}/${ProperName}_Frame.svg`,
+    relevo: `${folder}/${ProperName}_Relevo.svg`,
   };
 };
 
@@ -23,7 +25,7 @@ export const NUMENS = [
     description: "Guerrero testarudo.",
     passive: "—",
     ...makeAssets("Drakar"),
-    attacks: [{ id: "atk10", name: "Ataque", dmg: 50, usesMax: 10, kind: "coin_on_heads_10" }],
+    attacks: [{ id: "atk10", name: "Ataque", dmg: 10, usesMax: 10, kind: "coin_on_heads_10" }],
   },
   {
     id: "merida",
@@ -38,7 +40,7 @@ export const NUMENS = [
     id: "kael",
     name: "Kael",
     maxHp: 140,
-    description: "Aventurero goliat que no se rinde.",
+    description: "Aventurero goliat.",
     passive: "—",
     ...makeAssets("Kael"),
     attacks: [{ id: "atk10", name: "Ataque", dmg: 10, usesMax: 10, kind: "coin_on_heads_10" }],
@@ -81,8 +83,10 @@ export const NUMENS = [
   },
 ];
 
+/** Mantengo este export para tu SelectNumen.jsx */
 export function listNumens() {
-  return NUMENS.slice();
+  // Devuelve los objetos tal cual (id, name, frame, relevo, select, idle, etc.)
+  return NUMENS;
 }
 
 export function getNumen(id) {
@@ -103,6 +107,10 @@ export function instantiateNumen(id) {
     select: base.select,
     Enemy: base.Enemy,
     frame: base.frame,
+    relevo: base.relevo,
     attacks: base.attacks.map((a) => ({ ...a, uses: a.usesMax })),
   };
 }
+
+// Opcional: por si en algún sitio importas por defecto
+export default NUMENS;

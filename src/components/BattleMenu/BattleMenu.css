@@ -1,6 +1,4 @@
 /* src/components/BattleMenu/BattleMenu.css */
-
-/* Columna del menú (el contenedor PlayerSide fija posición/tamaño) */
 .battle-menu{
     display: grid;
     gap: 14px;
@@ -8,8 +6,6 @@
     align-items: stretch;
     justify-items: stretch;
   }
-  
-  /* Botón “papel con sombra” */
   .btn{
     position: relative;
     display: block;
@@ -18,47 +14,34 @@
     border: 0;
     cursor: pointer;
     line-height: 1.1;
-    /* LA FUENTE VIENE DE global.css (Jaini) */
   }
-  
-  /* ¡IMPORTANTE! La etiqueta del botón queda ARRIBA de los pseudos */
   .btn__label{
     position: relative;
-    z-index: 2;                /* por encima de ::before/::after */
-    color: rgb(4, 4, 4);
+    z-index: 2;
+    color: #111;
     font-weight: 900;
     font-size: 18px;
     letter-spacing: .2px;
     user-select: none;
   }
-  
-  /* Hoja blanca con borde negro */
   .btn::before{
     content:"";
     position:absolute;
     inset:0;
-    background:rgb(255, 255, 255);
-    border:4px solid rgb(255, 255, 255);
+    background:#fff;
+    border:4px solid #000;
     clip-path: polygon(8% 0, 100% 0, 100% 70%, 92% 100%, 0 100%, 0 30%);
     z-index: 0;
   }
-  
-  /* Sombra negra desfasada */
   .btn::after{
     content:"";
     position:absolute;
     inset: 8px -12px -12px 8px;
-    background:rgb(255, 255, 255);
+    background:#000;
     clip-path: polygon(8% 0, 100% 0, 100% 70%, 92% 100%, 0 100%, 0 30%);
     z-index: 1;
     filter: drop-shadow(0 10px 18px rgba(0,0,0,.25));
   }
-  
-  /* Estados */
   .btn:active{ transform: translateY(1px); }
-  .btn:disabled,
-  .btn[aria-disabled="true"]{
-    opacity:.55;
-    cursor:not-allowed;
-  }
+  .btn:disabled{ opacity:.55; cursor:not-allowed; }
   

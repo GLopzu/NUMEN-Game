@@ -1,16 +1,28 @@
 // src/components/Side/EnemySide.jsx
 import "./EnemySide.css";
-import "../NumenHP/NumenHP"
+import "../NumenHP/NumenHP";
 import "../Anim/NumenArt.css";
 
-export default function EnemySide({ hp = 0, art = null, hit = false, anim = null }) {
+export default function EnemySide({
+  hp = 0,
+  art = null,
+  hit = false,
+  anim = null,
+  swap = null,        // <-- NUEVO
+}) {
   const isAttack = anim === "melee" || anim === "attack";
-  const animClass = isAttack ? "anim-attack--enemy" : "";
+  const attackClass = isAttack ? "anim-attack--enemy" : "";
+  const swapClass =
+    swap === "out"
+      ? "anim-switch-out--enemy"
+      : swap === "in" || swap === "enter"
+      ? "anim-switch-in--enemy"
+      : "";
 
   return (
     <section className="side side--enemy">
       {/* Arte anclado abajo-izquierda del contenedor */}
-      <div className={`side__art ${animClass} ${hit ? "is-hit" : ""}`}>
+      <div className={`side__art ${attackClass} ${swapClass} ${hit ? "is-hit" : ""}`.trim()}>
         {art ? <img src={art} alt="Enemigo" /> : null}
       </div>
 

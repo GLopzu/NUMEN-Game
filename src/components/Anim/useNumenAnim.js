@@ -1,31 +1,59 @@
 // src/components/Anim/useNumenAnim.js
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 
-export const ANIM_DURATION = {
-  melee: 650, // ms (debe coincidir con NumenArt.css)
+const DUR = {
+  melee: 650,
   hit: 320,
+  switchOut: 350,
+  switchIn: 450,
+  enter: 450,
 };
 
 export default function useNumenAnim() {
-  const [anim, setAnim] = useState(null);  // "melee" | null
+  const [anim, setAnim] = useState(null);   // 'melee' | 'attack' | null
   const [hit, setHit] = useState(false);
+  const [swap, setSwap] = useState(null);   // 'out' | 'in' | 'enter' | null
+  const timers = useRef([]);
 
-  const meleeTimer = useRef(null);
-  const hitTimer = useRef(null);
+  const withTimer = (fn, ms) => {
+    const t = setTimeout(fn, ms);
+    timers.current.push(t);
+    return t;
+  };
 
   const triggerMelee = () => {
-    clearTimeout(meleeTimer.current);
     setAnim("melee");
-    meleeTimer.current = setTimeout(() => setAnim(null), ANIM_DURATION.melee);
+    withTimer(() => setAnim(null), DUR.melee + 10);
   };
-
-  const triggerAttack = triggerMelee;
 
   const triggerHit = () => {
-    clearTimeout(hitTimer.current);
     setHit(true);
-    hitTimer.current = setTimeout(() => setHit(false), ANIM_DURATION.hit);
+    withTimer(() => setHit(false), DUR.hit + 10);
   };
 
-  return { anim, hit, triggerMelee, triggerAttack, triggerHit };
+  const triggerEnter = () => {
+    setSwap("enter");
+    withTimer(() => setSwap(null), DUR.enter + 10);
+  };
+
+  const startSwitchOut = useCallback(() => {
+    setSwap("out");
+    return new Promise((resolve) => {
+      withTimer(() => { setSwap(null); resolve(); }, DUR.switchOut);
+    });
+  }, []);
+
+  const startSwitchIn = useCallback(() => {
+    setSwap("in");
+    return new Promise((resolve) => {
+      withTimer(() => { setSwap(null); resolve(); }, DUR.switchIn);
+    });
+  }, []);
+
+  return {
+    anim, hit, swap,
+    triggerMelee, triggerHit, triggerEnter,
+    startSwitchOut, startSwitchIn,
+    DUR,
+  };
 }

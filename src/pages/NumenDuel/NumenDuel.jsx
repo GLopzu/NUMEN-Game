@@ -1,7 +1,7 @@
 // src/pages/NumenDuel.jsx
 import { useDispatch, useSelector } from "react-redux";
 import { useMemo, useEffect, useRef } from "react";
-import { attack, reset, pass, consts } from "../../store/duelSlice";
+import { attack, reset, pass, consts, enterSwitch, cancelSwitch, switchTo } from "../../store/duelSlice";
 import { getArena } from "../../data/arenas";
 
 import BattleMenu from "../../components/BattleMenu/BattleMenu";
@@ -9,7 +9,8 @@ import PlayerSide from "../../components/Side/PlayerSide";
 import EnemySide from "../../components/Side/EnemySide";
 import CombatLog from "../../components/Log/CombatLog";
 import useNumenAnim from "../../components/Anim/useNumenAnim";
-import ExitButton from "../../components/Exit/ExitButton"; // <<--- IMPORTA AQUÍ
+import ExitButton from "../../components/Exit/ExitButton";
+import SwitchTray from "../../components/SwitchTray/SwitchTray";
 
 import "./NumenDuel.css";
 
@@ -34,13 +35,20 @@ export default function NumenDuel() {
   const eAtk = st.enemy?.attacks?.[0] || null;
 
   const canAttack =
-    st.phase === "play" &&
-    st.turn === PLAYER &&
-    pAtk &&
-    (pAtk.uses ?? 0) > 0;
+    st.phase === "play" && st.turn === PLAYER && pAtk && (pAtk.uses ?? 0) > 0;
+
+  const hasBench  = (st.bench?.length || 0) > 0;
+  const canSwitch = st.phase === "play" && st.turn === PLAYER && hasBench;
 
   const playerAnim = useNumenAnim();
   const enemyAnim  = useNumenAnim();
+
+  // Entrada al montar
+  useEffect(() => {
+    playerAnim.triggerEnter();
+    enemyAnim.triggerEnter();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const doAttack = () => {
     if (!canAttack) return;
@@ -49,6 +57,7 @@ export default function NumenDuel() {
     dispatch(attack(PLAYER));
   };
 
+  // IA: responde tras tu acción
   const mounted = useRef(false);
   useEffect(() => {
     if (!mounted.current) { mounted.current = true; return; }
@@ -66,42 +75,57 @@ export default function NumenDuel() {
 
   const usesLeft = st.turn === PLAYER ? (pAtk?.uses ?? 0) : (eAtk?.uses ?? 0);
 
+  // Relevo: salir -> switch -> entrar
+  const handleSwitchChoose = async (idx) => {
+    await playerAnim.startSwitchOut();
+    dispatch(switchTo({ who: PLAYER, index: idx }));
+    await playerAnim.startSwitchIn();
+  };
+
   return (
     <main
       className="arena"
       style={arenaSrc ? { backgroundImage: `url(${arenaSrc})` } : undefined}
     >
-      {/* Botón Salir (arriba a la izquierda) */}
       <ExitButton href="/select" />
 
-      {/* Enemigo (izquierda) */}
+      {/* Enemigo */}
       <EnemySide
         hp={st.enemy?.hp}
         art={enemyArt}
         hit={enemyAnim.hit}
         anim={enemyAnim.anim}
+        swap={enemyAnim.swap}
       />
 
-      {/* Jugador (derecha) */}
+      {/* Jugador */}
       <PlayerSide
         hp={st.player?.hp}
         art={playerArt}
         hit={playerAnim.hit}
         anim={playerAnim.anim}
+        swap={playerAnim.swap}
       >
         <BattleMenu
           onAttack={doAttack}
           onSkills={() => dispatch(pass(PLAYER))}
           onGuard={() => dispatch(pass(PLAYER))}
-          onSwitch={() => dispatch(pass(PLAYER))}
+          onSwitch={() => canSwitch && dispatch(enterSwitch(PLAYER))}
           canAttack={!!canAttack}
           canSkills={false}
           canGuard={false}
-          canSwitch={false}
+          canSwitch={!!canSwitch}
         />
       </PlayerSide>
 
-      {/* Log inferior */}
+      {/* Menú de relevo: SIEMPRE VISIBLE; interactivo solo en switchMode */}
+      <SwitchTray
+        enabled={st.switchMode}
+        bench={st.bench || []}
+        onChoose={handleSwitchChoose}
+        onCancel={() => dispatch(cancelSwitch())}
+      />
+
       <CombatLog
         phase={st.phase}
         turn={st.turn}
