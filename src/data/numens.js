@@ -1,8 +1,19 @@
 // src/data/numens.js
-// Cada Numen ahora tiene:
-//  - idle:   imagen para su estado en batalla (cuando eres tú)
-//  - select: imagen para la pantalla de selección (o avatar)
-//  - Enemy:  imagen para cuando ese Numen aparece como enemigo (orientación/arte alterno)
+// Todas las rutas de imágenes siguen:
+// /assets/Numens/<Nombre>/<Nombre>.svg
+// /assets/Numens/<Nombre>/<Nombre>_select.svg
+// /assets/Numens/<Nombre>/<Nombre>_enemy.svg
+// /assets/Numens/<Nombre>/<Nombre>_Frame.svg
+
+const makeAssets = (ProperName) => {
+  const folder = `/assets/Numens/${ProperName}`;
+  return {
+    idle:   `${folder}/${ProperName}.svg`,
+    select: `${folder}/${ProperName}_select.svg`,
+    Enemy:  `${folder}/${ProperName}_enemy.svg`,
+    frame:  `${folder}/${ProperName}_Frame.svg`,
+  };
+};
 
 export const NUMENS = [
   {
@@ -11,12 +22,17 @@ export const NUMENS = [
     maxHp: 140,
     description: "Guerrero testarudo.",
     passive: "—",
-    idle:   "/assets/Numens/Drakar.svg",
-    select: "/assets/Numens/Drakar_select.svg",
-    Enemy:  "/assets/numens/drakar/enemy.png",
-    attacks: [
-      { id: "atk10", name: "Ataque", dmg: 10, usesMax: 10, kind: "coin_on_heads_10" },
-    ],
+    ...makeAssets("Drakar"),
+    attacks: [{ id: "atk10", name: "Ataque", dmg: 50, usesMax: 10, kind: "coin_on_heads_10" }],
+  },
+  {
+    id: "merida",
+    name: "Merida",
+    maxHp: 120,
+    description: "Arquera precisa.",
+    passive: "—",
+    ...makeAssets("Merida"),
+    attacks: [{ id: "atk10", name: "Ataque", dmg: 10, usesMax: 10, kind: "coin_on_heads_10" }],
   },
   {
     id: "kael",
@@ -24,14 +40,50 @@ export const NUMENS = [
     maxHp: 140,
     description: "Aventurero goliat que no se rinde.",
     passive: "—",
-    idle:   "/assets/numens/kael/idle.png",
-    select: "/assets/numens/kael/select.png",
-    Enemy:  "/assets/Numens/Kael_enemy.svg",
-    attacks: [
-      { id: "atk10", name: "Ataque", dmg: 10, usesMax: 10, kind: "coin_on_heads_10" },
-    ],
+    ...makeAssets("Kael"),
+    attacks: [{ id: "atk10", name: "Ataque", dmg: 10, usesMax: 10, kind: "coin_on_heads_10" }],
+  },
+  {
+    id: "nox",
+    name: "Nox",
+    maxHp: 110,
+    description: "Sombras y venenos.",
+    passive: "—",
+    ...makeAssets("Nox"),
+    attacks: [{ id: "atk10", name: "Ataque", dmg: 10, usesMax: 10, kind: "coin_on_heads_10" }],
+  },
+  {
+    id: "verdantius",
+    name: "Verdantius",
+    maxHp: 150,
+    description: "Guardia del bosque.",
+    passive: "—",
+    ...makeAssets("Verdantius"),
+    attacks: [{ id: "atk10", name: "Ataque", dmg: 10, usesMax: 10, kind: "coin_on_heads_10" }],
+  },
+  {
+    id: "aeilor",
+    name: "Aeilor",
+    maxHp: 125,
+    description: "Maestro del viento.",
+    passive: "—",
+    ...makeAssets("Aeilor"),
+    attacks: [{ id: "atk10", name: "Ataque", dmg: 10, usesMax: 10, kind: "coin_on_heads_10" }],
+  },
+  {
+    id: "mortimer",
+    name: "Mortimer",
+    maxHp: 130,
+    description: "Nigromante sarcástico.",
+    passive: "—",
+    ...makeAssets("Mortimer"),
+    attacks: [{ id: "atk10", name: "Ataque", dmg: 10, usesMax: 10, kind: "coin_on_heads_10" }],
   },
 ];
+
+export function listNumens() {
+  return NUMENS.slice();
+}
 
 export function getNumen(id) {
   return NUMENS.find((n) => n.id === id);
@@ -50,6 +102,7 @@ export function instantiateNumen(id) {
     idle: base.idle,
     select: base.select,
     Enemy: base.Enemy,
+    frame: base.frame,
     attacks: base.attacks.map((a) => ({ ...a, uses: a.usesMax })),
   };
 }

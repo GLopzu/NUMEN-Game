@@ -1,0 +1,51 @@
+/* src/components/Select/NumenCard.css
+   Usa el tamaño del tile de la página para que todo quepa sin scroll. */
+
+   .numen-card{
+    width: var(--tile, 180px);
+    aspect-ratio: 1 / 1;         /* cuadrada para mostrar bien el frame */
+    padding: 10px;
+    border: 0;
+    border-radius: 16px;
+    background: rgba(255,255,255,.06);
+    box-shadow: inset 0 0 0 2px rgba(255,255,255,.06);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: transform .06s ease, box-shadow .12s ease;
+  }
+  .numen-card:disabled{ opacity:.5; cursor:not-allowed; }
+  .numen-card:hover{ transform: translateY(-1px); }
+  .numen-card.is-selected{
+    box-shadow:
+      inset 0 0 0 3px #2cf3ff,
+      0 8px 18px rgba(0,0,0,.25);
+  }
+  
+  .numen-card__img{
+    width: 100%;
+    height: calc(100% - clamp(18px, 2.2dvh, 24px)); /* deja espacio para el nombre */
+    display: grid; place-items: center;
+  }
+  .numen-card__img img{
+    max-width: 96%; max-height: 96%;
+    object-fit: contain;
+    user-select: none; -webkit-user-drag: none;
+  }
+  .numen-card__ph{
+    width: 100%; height: 100%;
+    border-radius: 12px; background: #1b2632;
+  }
+  
+  .numen-card__name{
+    position: absolute;
+    left: 0; right: 0; bottom: clamp(4px, .8dvh, 8px);
+    text-align: center;
+    font-weight: 900;
+    font-size: clamp(12px, 1.8dvh, 16px);
+    letter-spacing: .3px;
+    color: #e8f0ff;
+    text-shadow: 0 2px 4px rgba(0,0,0,.35);
+    pointer-events: none;
+  }
+  

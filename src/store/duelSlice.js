@@ -1,19 +1,31 @@
 // src/store/duelSlice.js
 import { createSlice } from "@reduxjs/toolkit";
 import { tossCoin } from "../lib/coin";
-import { instantiateNumen } from "../data/numens";
+import { instantiateNumen, NUMENS } from "../data/numens";
+import { loadRoster } from "../lib/storage";
 
 const PLAYER = "PLAYER";
 const ENEMY = "ENEMY";
 
-const makeInitialState = () => ({
-  phase: "play",   // 'play' | 'over'
-  turn: PLAYER,    // por ahora empieza el jugador
-  player: instantiateNumen("drakar"), // Tú
-  enemy:  instantiateNumen("kael"),   // IA
-  last: null,      // { who, flip, dmg }
-  winner: null,
-});
+function pickEnemyId(excludeId) {
+  const pool = NUMENS.map(n => n.id).filter(id => id !== excludeId);
+  return pool.length ? pool[Math.floor(Math.random() * pool.length)] : excludeId;
+}
+
+const makeInitialState = () => {
+  const roster = loadRoster();
+  const playerId = roster?.[0] || "drakar";
+  const enemyId  = pickEnemyId(playerId) || "kael";
+
+  return {
+    phase: "play",           // 'play' | 'over'
+    turn: PLAYER,            // empieza jugador
+    player: instantiateNumen(playerId),
+    enemy:  instantiateNumen(enemyId),
+    last: null,              // { who, flip, dmg }
+    winner: null,
+  };
+};
 
 const slice = createSlice({
   name: "duel",
@@ -27,18 +39,15 @@ const slice = createSlice({
 
       const me  = who === PLAYER ? state.player : state.enemy;
       const opp = who === PLAYER ? state.enemy  : state.player;
-      const atk = me?.attacks?.[0]; // Único ataque en este MVP
-
+      const atk = me?.attacks?.[0];
       if (!atk || atk.uses <= 0) return;
 
       atk.uses -= 1;
-
       const flip = tossCoin(0.5);
       const dmg  = flip === "cara" ? atk.dmg : 0;
       if (dmg > 0) opp.hp = Math.max(0, opp.hp - dmg);
 
       state.last = { who, flip, dmg };
-
       if (opp.hp <= 0) {
         state.phase = "over";
         state.winner = who;

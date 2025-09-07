@@ -1,0 +1,85 @@
+/* src/pages/SelectNumen.css
+   Objetivo: sin scroll. Todo cabe en la pantalla usando tamaños por vh. */
+
+   .select {
+    /* ocupa toda la ventana y no scrollea */
+    height: 100dvh;            /* dinámico (mejor en móviles) */
+    overflow: hidden;
+  
+    /* variables responsivas */
+    --pad-v: clamp(12px, 2dvh, 24px);
+    --pad-h: clamp(12px, 2dvw, 40px);
+    --gap:   clamp(10px, 2dvh, 24px);
+  
+    /* tamaño base de cada tarjeta del grid (lado izquierdo) */
+    --tile: clamp(120px, 18dvh, 200px);
+  
+    /* ancho de la barra lateral (derecha) y tamaño de slots */
+    --sidebar-w: clamp(220px, 22dvh, 300px);
+    --slot:      clamp(120px, 18dvh, 180px);
+  
+    padding: var(--pad-v) var(--pad-h);
+    background: radial-gradient(1200px 600px at 50% 20%, rgba(255,255,255,.06), rgba(0,0,0,.5) 60%), #0b3040;
+    color: #e8f0ff;
+  }
+  
+  .select__title {
+    margin: 0 0 var(--gap);
+    text-align: center;
+    font-size: clamp(24px, 4dvh, 56px);
+    letter-spacing: .5px;
+  }
+  
+  /* El contenedor principal se dimensiona al alto restante */
+  .select__layout {
+    display: grid;
+    grid-template-columns: 1fr var(--sidebar-w);
+    gap: clamp(20px, 3dvh, 36px);
+    height: calc(100% - (var(--gap) + clamp(24px, 4dvh, 56px))); /* 100vh - (título + gap) */
+    align-items: center;    /* centra verticalmente ambas columnas */
+  }
+  
+  /* Grid izquierda: 3x? con tamaño fijo por --tile. Centrado vertical y horizontal */
+  .select__grid {
+    display: grid;
+    grid-template-columns: repeat(3, var(--tile));
+    grid-auto-rows: var(--tile);
+    gap: var(--gap);
+    justify-content: center;
+    align-content: center;  /* centra el bloque dentro de la columna */
+    height: 100%;
+  }
+  
+  /* Sidebar derecha */
+  .select__team {
+    display: grid;
+    grid-template-rows: auto clamp(48px, 8dvh, 64px);
+    gap: var(--gap);
+    align-items: center;
+    justify-items: center;
+  }
+  
+  /* Botón LISTO */
+  .select__ready {
+    width: 100%;
+    height: clamp(48px, 8dvh, 64px);
+    font-size: clamp(20px, 3dvh, 28px);
+    font-weight: 900;
+    color: #111;
+    background: #fff;
+    border: 4px solid #000;
+    border-radius: 12px;
+    clip-path: polygon(8% 0, 100% 0, 100% 70%, 92% 100%, 0 100%, 0 30%);
+    filter: drop-shadow(0 10px 18px rgba(0,0,0,.25));
+    cursor: pointer;
+  }
+  .select__ready:disabled { opacity: .5; cursor: not-allowed; }
+  
+  /* Stack en pantallas estrechas pero SIN scroll (se recalculan tamaños por dvh) */
+  @media (max-width: 980px) {
+    .select__layout {
+      grid-template-columns: 1fr;
+      height: calc(100% - (var(--gap) + clamp(24px, 5dvh, 56px)));
+    }
+  }
+  

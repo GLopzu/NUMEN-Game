@@ -1,14 +1,15 @@
 // src/pages/NumenDuel.jsx
 import { useDispatch, useSelector } from "react-redux";
 import { useMemo, useEffect, useRef } from "react";
-import { attack, reset, pass, consts } from "../store/duelSlice";
-import { getArena } from "../data/arenas";
+import { attack, reset, pass, consts } from "../../store/duelSlice";
+import { getArena } from "../../data/arenas";
 
-import BattleMenu from "../components/BattleMenu/BattleMenu";
-import PlayerSide from "../components/Side/PlayerSide";
-import EnemySide from "../components/Side/EnemySide";
-import CombatLog from "../components/Log/CombatLog";
-import useNumenAnim from "../components/Anim/useNumenAnim";
+import BattleMenu from "../../components/BattleMenu/BattleMenu";
+import PlayerSide from "../../components/Side/PlayerSide";
+import EnemySide from "../../components/Side/EnemySide";
+import CombatLog from "../../components/Log/CombatLog";
+import useNumenAnim from "../../components/Anim/useNumenAnim";
+import ExitButton from "../../components/Exit/ExitButton"; // <<--- IMPORTA AQUÍ
 
 import "./NumenDuel.css";
 
@@ -26,6 +27,7 @@ export default function NumenDuel() {
     (st.phase === "play" && st.turn === PLAYER
       ? st.player?.select || st.player?.idle
       : st.player?.idle || st.player?.select) || null;
+
   const enemyArt = st.enemy?.Enemy || st.enemy?.idle || null;
 
   const pAtk = st.player?.attacks?.[0] || null;
@@ -47,7 +49,6 @@ export default function NumenDuel() {
     dispatch(attack(PLAYER));
   };
 
-  // IA: solo tras tu jugada (no al montar)
   const mounted = useRef(false);
   useEffect(() => {
     if (!mounted.current) { mounted.current = true; return; }
@@ -70,6 +71,10 @@ export default function NumenDuel() {
       className="arena"
       style={arenaSrc ? { backgroundImage: `url(${arenaSrc})` } : undefined}
     >
+      {/* Botón Salir (arriba a la izquierda) */}
+      <ExitButton href="/select" />
+
+      {/* Enemigo (izquierda) */}
       <EnemySide
         hp={st.enemy?.hp}
         art={enemyArt}
@@ -77,6 +82,7 @@ export default function NumenDuel() {
         anim={enemyAnim.anim}
       />
 
+      {/* Jugador (derecha) */}
       <PlayerSide
         hp={st.player?.hp}
         art={playerArt}
@@ -95,6 +101,7 @@ export default function NumenDuel() {
         />
       </PlayerSide>
 
+      {/* Log inferior */}
       <CombatLog
         phase={st.phase}
         turn={st.turn}
