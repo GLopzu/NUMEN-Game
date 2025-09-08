@@ -1,59 +1,70 @@
-import "./CombatLog.css";
-
-function whoLabel(who) {
-  if (who === "PLAYER") return "Jugador";
-  if (who === "ENEMY") return "Enemigo";
-  return who || "";
-}
-
 export default function CombatLog({ phase, turn, usesLeft, winner, last, onReset }) {
-  const lines = [];
+  const rows = [];
 
-  if (phase === "play") lines.push(`Turno: ${whoLabel(turn)} · Usos restantes: ${usesLeft ?? 0}`);
-  else lines.push(`Ganador: ${whoLabel(winner)}`);
-
-  if (last?.action === "attack") {
-    const attacker = whoLabel(last.who);
-    const hitTxt = last.hitLanded ? "Cara (golpea)" : "Cruz (falla)";
-    const dmgTxt = `Daño final: ${last.dmg ?? 0}`;
-    lines.push(`${attacker} ataca · Moneda: ${hitTxt} · ${dmgTxt}`);
-
-    if (last.guarded) {
-      if (last.guard?.wasHit) {
-        const gFlipTxt = last.guard.flip === "cara" ? "Cara" : "Cruz";
-        const final    = last.guard.finalDmg ?? 0;
-        const tail     = last.guard.consumed
-          ? "Guardia consumida (CD 1)."
-          : "Guardia se mantiene.";
-        lines.push(`Objetivo en Guardia → Moneda: ${gFlipTxt} · Mitiga completamente → Daño final ${final} · ${tail}`);
-      } else {
-        lines.push("El atacante falló: la Guardia NO se activó y se mantiene.");
-      }
-    }
-  } else if (last?.action === "guard") {
-    lines.push(`${whoLabel(last.who)} entra en Guardia.`);
-  } else if (last?.action === "switch") {
-    lines.push(`${whoLabel(last.who)} realiza Relevo: ${last.from} → ${last.to}.`);
-  } else if (last?.action === "pass") {
-    const extra = last?.reason === "no_uses" ? " (sin usos disponibles)" : "";
-    lines.push(`${whoLabel(last.who)} pasa el turno${extra}.`);
-  }
-
-  if (last?.after?.autopass) {
-    const skip = whoLabel(last.after.autopass);
-    lines.push(`${skip} está en Guardia → turno saltado automáticamente.`);
-  }
-
-  return (
-    <div className="log">
-      {phase === "play" ? (
-        lines.map((t, i) => <p key={i}>{t}</p>)
-      ) : (
-        <p>
-          {lines[0]}{" "}
-          <button className="log__reset" onClick={onReset}>Reiniciar</button>
-        </p>
-      )}
-    </div>
+  rows.push(
+    <p key="hdr">
+      Turno: <b>{turn === "PLAYER" ? "Jugador" : "Enemigo"}</b>
+      {usesLeft !== null && usesLeft !== undefined ? (
+        <> · Usos restantes: <b>{usesLeft}</b></>
+      ) : null}
+    </p>
   );
+
+  if (last) {
+    if (last.action === "basic" || last.action === "attack") {
+      rows.push(
+        <p key="atk">
+          {last.who === "PLAYER" ? "Jugador" : "Enemigo"} ataca · Moneda:{" "}
+          {last.hitLanded ? "Cara (éxito)" : "Cruz (falla)"} · Daño base: {last.dmg}
+        </p>
+      );
+      if (last.guarded) {
+        if (last.guard?.wasHit) {
+          rows.push(
+            <p key="g1">
+              Objetivo estaba en Guardia → se activó: mitigación{" "}
+              {last.guard?.flip === "cara" ? "100%" : "70%"} · Daño final:{" "}
+              {last.guard?.finalDmg ?? 0}
+            </p>
+          );
+        } else {
+          rows.push(
+            <p key="g2">
+              El objetivo estaba en Guardia, pero el golpe falló (la Guardia se mantiene).
+            </p>
+          );
+        }
+      }
+    } else if (last.action === "guard") {
+      rows.push(<p key="grd">{last.who === "PLAYER" ? "Jugador" : "Enemigo"} entra en Guardia.</p>);
+    } else if (last.action === "switch") {
+      rows.push(<p key="sw">Relevo: {last.from} → {last.to}</p>);
+    } else if (last.action === "koSwitch") {
+      rows.push(<p key="ko1">¡K.O.! {last.target === "PLAYER" ? "Jugador" : "Enemigo"} cambia forzadamente.</p>);
+      rows.push(<p key="ko2">Entra: <b>{last.to}</b></p>);
+    } else if (last.action === "pass") {
+      rows.push(<p key="ps">{last.who === "PLAYER" ? "Jugador" : "Enemigo"} pasa turno.</p>);
+    }
+    if (last.after?.autopass) {
+      rows.push(
+        <p key="ap">
+          {last.after.autopass === "PLAYER" ? "Jugador" : "Enemigo"} estaba en Guardia → turno
+          saltado automáticamente.
+        </p>
+      );
+    }
+  }
+
+  if (phase !== "play") {
+    rows.push(
+      <p key="end">
+        Ganador: <b>{winner}</b>{" "}
+        <button style={{ marginLeft: 8 }} onClick={onReset}>
+          Reiniciar
+        </button>
+      </p>
+    );
+  }
+
+  return <div className="log">{rows}</div>;
 }

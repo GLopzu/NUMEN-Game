@@ -1,8 +1,6 @@
-// src/pages/NumenDuel.jsx
 import { useDispatch, useSelector } from "react-redux";
-import { useMemo, useEffect, useRef } from "react";
+import { useMemo, useEffect } from "react";
 import {
-  attack,
   reset,
   pass,
   consts,
@@ -10,6 +8,7 @@ import {
   cancelSwitch,
   switchTo,
   guard as guardAction,
+  attackBasic,          // <<--- usar el nuevo ataque
 } from "../../store/duelSlice";
 import { getArena } from "../../data/arenas";
 
@@ -30,11 +29,9 @@ export default function NumenDuel() {
   const dispatch = useDispatch();
   const st = useSelector((s) => s.duel);
 
-  // Arena
   const arena = useMemo(() => getArena(ARENA_ID), []);
   const arenaSrc = arena?.src;
 
-  // Arte dinámico por turno (tu Numen usa "select" en tu turno)
   const playerArt =
     (st.phase === "play" && st.turn === PLAYER
       ? st.player?.select || st.player?.idle
@@ -42,19 +39,14 @@ export default function NumenDuel() {
 
   const enemyArt = st.enemy?.Enemy || st.enemy?.idle || null;
 
-  // Ataques
-  const pAtk = st.player?.attacks?.[0] || null;
-  const eAtk = st.enemy?.attacks?.[0] || null;
-
   const playerIsGuard = !!st.playerGuard;
   const playerGuardCD = st.playerGuardCD || 0;
 
+  // Ataque básico SIEMPRE (salvo guardia o estados futuros)
   const canAttack =
     st.phase === "play" &&
     st.turn === PLAYER &&
-    !playerIsGuard &&
-    pAtk &&
-    (pAtk.uses ?? 0) > 0;
+    !playerIsGuard;
 
   const hasBench  = (st.bench?.length || 0) > 0;
   const canSwitch =
@@ -70,19 +62,17 @@ export default function NumenDuel() {
   const playerAnim = useNumenAnim();
   const enemyAnim  = useNumenAnim();
 
-  // Animación de entrada
   useEffect(() => {
     playerAnim.triggerEnter();
     enemyAnim.triggerEnter();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // DEBUG: ver cada cambio de turno y tick
   useEffect(() => {
     console.log("[UI] phase:", st.phase, "| turn:", st.turn, "| tick:", st.turnTick);
   }, [st.phase, st.turn, st.turnTick]);
 
-  // === Failsafe: si llega mi turno y sigo en Guardia, paso automático ===
+  // Failsafe: si me queda mi turno y estoy en Guardia, paso automáticamente
   useEffect(() => {
     if (st.phase !== "play") return;
     if (st.turn !== PLAYER) return;
@@ -98,13 +88,9 @@ export default function NumenDuel() {
     return () => clearTimeout(t);
   }, [st.phase, st.turn, st.playerGuard, st.switchMode, dispatch]);
 
-  // === IA ENEMIGA ===
-  // Depende de turnTick además del turno; así actúa tras autopass aunque el turno siga en ENEMY.
-  const mounted = useRef(false);
+  // IA enemiga
   useEffect(() => {
-    if (!mounted.current) { mounted.current = true; return; }
-    if (st.phase !== "play") return;
-    if (st.turn !== ENEMY) return;
+    if (st.phase !== "play" || st.turn !== ENEMY) return;
 
     const t = setTimeout(() => {
       if (st.enemyGuard) {
@@ -112,31 +98,20 @@ export default function NumenDuel() {
         dispatch(pass(ENEMY));
         return;
       }
-      console.log("[AI] enemy ATTACK");
+      console.log("[AI] enemy BASIC ATTACK");
       enemyAnim.triggerMelee();
       playerAnim.triggerHit();
-      dispatch(attack(ENEMY));
+      dispatch(attackBasic(ENEMY));
     }, 600);
 
     return () => clearTimeout(t);
-    // 👇 agregamos turnTick y autopass para que SIEMPRE reaccione
-  }, [st.phase, st.turn, st.enemyGuard, st.turnTick, st.last?.after?.autopass, dispatch]);
+  }, [st.phase, st.turn, st.enemyGuard, st.turnTick, st.last?.after?.autopass, dispatch, enemyAnim, playerAnim]);
 
-  // Acciones del jugador
   const doAttack = () => {
     if (!canAttack) return;
     playerAnim.triggerMelee();
     enemyAnim.triggerHit();
-    dispatch(attack(PLAYER));
-  };
-
-  const usesLeft = st.turn === PLAYER ? (pAtk?.uses ?? 0) : (eAtk?.uses ?? 0);
-
-  // Relevo (salida → switch → entrada)
-  const handleSwitchChoose = async (idx) => {
-    await playerAnim.startSwitchOut();
-    dispatch(switchTo({ who: PLAYER, index: idx }));
-    await playerAnim.startSwitchIn();
+    dispatch(attackBasic(PLAYER));
   };
 
   return (
@@ -144,7 +119,6 @@ export default function NumenDuel() {
       className="arena"
       style={arenaSrc ? { backgroundImage: `url(${arenaSrc})` } : undefined}
     >
-      {/* Botón Salir */}
       <ExitButton href="/select" />
 
       {/* Enemigo */}
@@ -166,11 +140,11 @@ export default function NumenDuel() {
       >
         <BattleMenu
           onAttack={doAttack}
-          onSkills={() => dispatch(pass(PLAYER))}
-          onGuard={() => canGuard && dispatch(guardAction(PLAYER))}
+          onSkills={() => dispatch(pass(PLAYER))}     // placeholder
+          onGuard={() => dispatch(guardAction(PLAYER))}
           onSwitch={() => canSwitch && dispatch(enterSwitch(PLAYER))}
           canAttack={!!canAttack}
-          canSkills={false}
+          canSkills={false}           // hasta que implementemos habilidades
           canGuard={!!canGuard}
           canSwitch={!!canSwitch}
         />
@@ -180,15 +154,19 @@ export default function NumenDuel() {
       <SwitchTray
         enabled={st.switchMode}
         bench={st.bench || []}
-        onChoose={handleSwitchChoose}
+        onChoose={async (idx) => {
+          await playerAnim.startSwitchOut();
+          dispatch(switchTo({ who: PLAYER, index: idx }));
+          await playerAnim.startSwitchIn();
+        }}
         onCancel={() => dispatch(cancelSwitch())}
       />
 
-      {/* Log */}
+      {/* Log (ya no mostramos "usos restantes" para ataque básico) */}
       <CombatLog
         phase={st.phase}
         turn={st.turn}
-        usesLeft={usesLeft}
+        usesLeft={null}
         winner={st.winner}
         last={st.last}
         onReset={() => dispatch(reset())}

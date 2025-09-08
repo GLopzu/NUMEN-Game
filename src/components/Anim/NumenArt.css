@@ -3,12 +3,12 @@
 /* ===== Ataque ===== */
 @keyframes attackPlayer {
     0% { transform: translateX(0) scale(1); }
-    40%,55% { transform: translateX(-140px) scale(1.05); }
+    40%,55% { transform: translateX(-560px) scale(1.05); }
     100% { transform: translateX(0) scale(1); }
   }
   @keyframes attackEnemy {
     0% { transform: translateX(0) scale(1); }
-    40%,55% { transform: translateX(140px) scale(1.05); }
+    40%,55% { transform: translateX(560px) scale(1.05); }
     100% { transform: translateX(0) scale(1); }
   }
   .anim-attack--player { animation: attackPlayer 650ms cubic-bezier(.2,.6,.2,1) both; transform-origin: center bottom; }
@@ -17,10 +17,10 @@
   /* ===== Golpe ===== */
   @keyframes hitShake {
     0%,100% { transform: translateX(0); }
-    20% { transform: translateX(-6px); }
-    40% { transform: translateX(6px); }
-    60% { transform: translateX(-3px); }
-    80% { transform: translateX(3px); }
+    20% { transform: translateX(-12px); }
+    40% { transform: translateX(12px); }
+    60% { transform: translateX(-6px); }
+    80% { transform: translateX(6px); }
   }
   .is-hit { animation: hitShake 320ms ease-out; }
   
@@ -28,11 +28,11 @@
   /* Sale hacia afuera de su lado */
   @keyframes switchOutPlayer {
     from { opacity: 1; transform: translateX(0) scale(1); filter: blur(0px); }
-    to   { opacity: 0; transform: translateX(140px) scale(.95); filter: blur(1px); }
+    to   { opacity: 0; transform: translateX(360px) scale(.95); filter: blur(1px); }
   }
   @keyframes switchOutEnemy {
     from { opacity: 1; transform: translateX(0) scale(1); filter: blur(0px); }
-    to   { opacity: 0; transform: translateX(-140px) scale(.95); filter: blur(1px); }
+    to   { opacity: 0; transform: translateX(-360px) scale(.95); filter: blur(1px); }
   }
   
   /* Entra desde fuera hacia su lado */
@@ -49,4 +49,3 @@
   .anim-switch-out--enemy  { animation: switchOutEnemy 350ms ease both;  }
   .anim-switch-in--player  { animation: switchInPlayer 450ms ease both;  }
   .anim-switch-in--enemy   { animation: switchInEnemy 450ms ease both;   }
-  

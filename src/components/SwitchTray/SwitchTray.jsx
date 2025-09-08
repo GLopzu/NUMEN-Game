@@ -1,4 +1,3 @@
-// src/components/SwitchTray/SwitchTray.jsx
 import "./SwitchTray.css";
 import "../NumenHP/NumenHP"
 
@@ -6,6 +5,7 @@ import "../NumenHP/NumenHP"
  * Menú superior derecho que muestra la banca.
  * Siempre visible; sólo interactivo cuando enabled === true.
  * Imagen priorizada: relevo -> frame -> select -> idle
+ * Si el numen está derrotado (defeated) se renderiza deshabilitado y con badge “K.O.”.
  */
 export default function SwitchTray({
   enabled = false,
@@ -14,39 +14,31 @@ export default function SwitchTray({
   onCancel,   // () => void
 }) {
   const stateClass = enabled ? "is-enabled" : "is-disabled";
-
   return (
-    <div className={`switch-tray ${stateClass}`} aria-disabled={!enabled}>
+    <div className={`switch-tray ${stateClass}`}>
       <div className="switch-tray__header">
-        <span className="switch-tray__title">
-          {enabled ? "Relevar a…" : "Banca (pulsa Relevo para cambiar)"}
-        </span>
+        <div className="switch-tray__title">Banca (pulsa Relevo para cambiar)</div>
         {enabled ? (
-          <button
-            className="switch-tray__close"
-            onClick={onCancel}
-            aria-label="Cancelar relevo"
-          >
-            ×
-          </button>
+          <button className="switch-tray__close" onClick={onCancel} title="Cancelar relevo">✕</button>
         ) : null}
       </div>
 
       <div className="switch-tray__list">
         {bench.map((n, i) => {
-          const imgSrc = n.relevo || n.frame || n.select || n.idle || "";
+          const src = n.relevo || n.frame || n.select || n.idle || "";
+          const ko  = !!n.defeated || (n.hp ?? n.maxHp) <= 0;
           return (
             <button
-              key={n.id || i}
-              className="switch-tray__card"
-              onClick={enabled ? () => onChoose(i) : undefined}
-              disabled={!enabled}
+              key={i}
+              className={`switch-tray__item ${ko ? "is-ko" : ""}`}
+              onClick={enabled && !ko ? () => onChoose(i) : undefined}
+              disabled={!enabled || ko}
               title={n.name}
             >
               <div className="switch-tray__img">
-                {imgSrc ? <img src={imgSrc} alt={n.name} /> : null}
+                {src ? <img src={src} alt={n.name} draggable="false" /> : <div className="ph" />}
+                {ko ? <span className="switch-tray__badge">K.O.</span> : null}
               </div>
-
               <div className="switch-tray__meta">
                 <div className="switch-tray__name">{n.name}</div>
                 <div className="switch-tray__hp hp-badge">
