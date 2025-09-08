@@ -1,52 +1,64 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { tossCoin } from "../lib/coin";
-import { instantiateNumen, NUMENS } from "../data/numens";
+import { instantiateNumen } from "../data/numens";
 import { loadRoster } from "../lib/storage";
+import { getLevel, getNextLevelId, DEFAULT_LEVEL_ID } from "../data/levels";
 
 const PLAYER = "PLAYER";
 const ENEMY  = "ENEMY";
 
 /* ---------- helpers ---------- */
-function pickEnemyId(excludeId) {
-  const pool = NUMENS.map(n => n.id).filter(id => id !== excludeId);
-  return pool.length ? pool[Math.floor(Math.random() * pool.length)] : excludeId;
+function makePlayerTeamFromRoster() {
+  const roster = loadRoster(); // ['drakar','kael',...]
+  const ids = Array.isArray(roster) && roster.length ? roster.slice(0, 3) : ["drakar"];
+  const active = instantiateNumen(ids[0]);
+  const bench  = ids.slice(1).map(instantiateNumen).filter(Boolean);
+  return { active, bench };
 }
-
-function makeTeamFromRoster() {
-  const roster = loadRoster();            // ['drakar','kael',...]
-  const first  = (roster && roster[0]) || "drakar";
-  const bench  = (roster || []).slice(1,3).map(id => ({ ...instantiateNumen(id) })); // bench sin defeated
-  return {
-    active: instantiateNumen(first),
-    bench,
-  };
+function makeEnemyTeamFromLevel(level) {
+  const ids = (level?.enemyTeam || []).slice(0, 3);
+  const active = ids[0] ? instantiateNumen(ids[0]) : instantiateNumen("kael");
+  const bench  = ids.slice(1).map(instantiateNumen).filter(Boolean);
+  return { active, bench };
 }
+function makeInitialState(levelId = DEFAULT_LEVEL_ID) {
+  const level = getLevel(levelId);
+  const player = makePlayerTeamFromRoster();
+  const enemy  = makeEnemyTeamFromLevel(level);
 
-function makeInitialState() {
-  const team = makeTeamFromRoster();
-  const enemyId = pickEnemyId(team.active?.id || "drakar");
   return {
-    phase: "play",
-    turn : PLAYER,
+    // meta nivel
+    levelId,
+    arenaId: level.arena,
+
+    // fases: 'intro' (diálogo) → 'play' → 'over'
+    phase: "intro",
+    dialogQueue: level?.dialogue?.intro || [],
+    dialogIndex: 0,
+
+    // turno
+    turn : PLAYER, // se decide tras el intro por moneda
     turnTick: 0,
 
-    player: team.active,     // activo jugador
-    bench : team.bench,      // banca jugador (cada item puede tener {defeated:true})
-    enemy : instantiateNumen(enemyId),
+    // equipos
+    player: player.active,
+    bench : player.bench,       // banca jugador
+    enemy : enemy.active,
+    enemyBench: enemy.bench,    // banca enemigo
 
+    // estados
     playerGuard: false,
     enemyGuard : false,
-    playerGuardCD: 0,        // CD se aplica SOLO cuando la guardia se CONSUME
+    playerGuardCD: 0,
     enemyGuardCD : 0,
 
-    last: null,              // { who, action, ... , after:{autopass:WHO} }
+    last: null,
     winner: null,
 
+    // UI
     switchMode: false,
   };
 }
-
-/** Decrementa CD cuando ese jugador TERMINA su turno */
 function finishTurn(state, who) {
   if (who === PLAYER) {
     if (state.playerGuardCD > 0) state.playerGuardCD -= 1;
@@ -54,44 +66,28 @@ function finishTurn(state, who) {
     if (state.enemyGuardCD > 0) state.enemyGuardCD -= 1;
   }
 }
-
-/** Avanza turno y, si el siguiente está en Guardia, se autopasa sin consumirla */
 function advanceTurnWithAutoPass(state, next) {
   const curr = state.turn;
-
-  // Termina turno del actual
   finishTurn(state, curr);
 
   const nextIsGuard = next === PLAYER ? state.playerGuard : state.enemyGuard;
-
   if (!nextIsGuard) {
     state.turn = next;
     state.turnTick += 1;
-    console.log("[TURN] set turn =", next, "tick =", state.turnTick);
     return;
   }
-
-  // Autopass porque el siguiente está en Guardia (la guardia NO se consume)
   const after = { ...(state.last?.after || {}), autopass: next };
   state.last = { ...(state.last || {}), after };
-  console.log("[TURN] AUTO-PASS of", next);
 
-  // Ese turno del 'next' también termina a efectos de CD
   finishTurn(state, next);
-
-  const back = curr; // vuelve al que estaba antes
-  state.turn = back;
+  state.turn = curr;
   state.turnTick += 1;
-  console.log("[TURN] after autopass → turn =", back, "tick =", state.turnTick);
 }
-
-/** KO handler: si hay banca viva, entra forzado; si no, derrota */
-function handleKO(state, victim /* 'PLAYER' | 'ENEMY' */, killer /* 'PLAYER' | 'ENEMY' */) {
+function handleKO(state, victim /* 'PLAYER'|'ENEMY' */, killer /* 'PLAYER'|'ENEMY' */) {
   if (victim === PLAYER) {
     const bench = state.bench || [];
     const nextIdx = bench.findIndex(n => !n.defeated && (n.hp ?? n.maxHp) > 0);
     if (nextIdx >= 0) {
-      // mover activo a banca como derrotado y entrar nuevo
       const outgoing = state.player;
       const incoming = bench.splice(nextIdx, 1)[0];
 
@@ -99,25 +95,46 @@ function handleKO(state, victim /* 'PLAYER' | 'ENEMY' */, killer /* 'PLAYER' | '
       bench.push(outgoing);
 
       state.player = incoming;
-      // al entrar otro, la guardia del jugador debe estar inactiva
       state.playerGuard = false;
 
       state.last = { who: killer, action: "koSwitch", target: "PLAYER", from: outgoing.id, to: incoming.id };
-
-      const nextTurn = killer === PLAYER ? ENEMY : PLAYER;
-      advanceTurnWithAutoPass(state, nextTurn);
-      return true; // NO terminó la partida
-    } else {
-      state.phase = "over";
-      state.winner = killer;
-      return true; // terminó
+      const next = killer === PLAYER ? ENEMY : PLAYER;
+      advanceTurnWithAutoPass(state, next);
+      return true;
     }
+    state.phase = "over";
+    state.winner = killer;
+    return true;
   } else {
-    // Enemigo sin banca (por ahora): derrota directa
+    const bench = state.enemyBench || [];
+    const nextIdx = bench.findIndex(n => !n.defeated && (n.hp ?? n.maxHp) > 0);
+    if (nextIdx >= 0) {
+      const outgoing = state.enemy;
+      const incoming = bench.splice(nextIdx, 1)[0];
+
+      outgoing.defeated = true;
+      bench.push(outgoing);
+
+      state.enemy = incoming;
+      state.enemyGuard = false;
+
+      state.last = { who: killer, action: "koSwitch", target: "ENEMY", from: outgoing.id, to: incoming.id };
+      const next = killer === PLAYER ? ENEMY : PLAYER;
+      advanceTurnWithAutoPass(state, next);
+      return true;
+    }
     state.phase = "over";
     state.winner = killer;
     return true;
   }
+}
+function startByCoin(state) {
+  const coin = tossCoin(0.5); // 'cara' | 'cruz'
+  const starts = coin === "cara" ? PLAYER : ENEMY;
+  state.turn = starts;
+  state.phase = "play";
+  state.last = { action: "coinflip", coin, starts };
+  state.turnTick = 0;
 }
 
 /* ---------- slice ---------- */
@@ -125,101 +142,92 @@ const slice = createSlice({
   name: "duel",
   initialState: makeInitialState(),
   reducers: {
-    reset(state) {
-      Object.assign(state, makeInitialState());
+    /** Inicia/recarga un nivel concreto */
+    startLevel(state, { payload: levelId }) {
+      return makeInitialState(levelId || DEFAULT_LEVEL_ID);
     },
+    /** Ir al siguiente nivel (si no hay, no hace nada; el UI se encarga de ocultar el botón) */
+    nextLevel(state) {
+      const curr = state.levelId || DEFAULT_LEVEL_ID;
+      const nextId = getNextLevelId(curr);
+      if (!nextId) return state; // último nivel: no avanzamos
+      return makeInitialState(nextId);      // ⚠️ al reconstruir desde roster, tu equipo vuelve full vida
+    },
+
+    /** Avanza el diálogo de intro; al terminar, decide el turno por moneda */
+    nextDialog(state) {
+      if (state.phase !== "intro") return;
+      const total = state.dialogQueue.length;
+      const nextIdx = state.dialogIndex + 1;
+      if (nextIdx < total) {
+        state.dialogIndex = nextIdx;
+        state.last = { action: "dialog", index: nextIdx };
+        return;
+      }
+      startByCoin(state);
+    },
+
+    reset(state) { return makeInitialState(state.levelId || DEFAULT_LEVEL_ID); },
 
     pass(state, { payload: who }) {
       if (state.phase !== "play" || state.turn !== who) return;
-
       const next = who === PLAYER ? ENEMY : PLAYER;
       state.last = { who, action: "pass" };
       advanceTurnWithAutoPass(state, next);
     },
 
-    /**
-     * Ataque BÁSICO sin usos:
-     * - Moneda: cara → 10 de daño; cruz → falla
-     * - No se puede usar si el atacante está en Guardia
-     * - Interactúa con Guardia del objetivo
-     * - Si deja KO → relevo forzado si hay banca; si no, derrota
-     */
+    /** Ataque básico sin usos (cara=10, cruz=falla); interactúa con Guardia */
     attackBasic(state, { payload: who }) {
       if (state.phase !== "play" || state.turn !== who) return;
-
-      // No atacas si TÚ estás en guardia
       if ((who === PLAYER ? state.playerGuard : state.enemyGuard)) return;
 
-      const me  = who === PLAYER ? state.player : state.enemy;
       const opp = who === PLAYER ? state.enemy  : state.player;
+      const oppGuard = who === PLAYER ? state.enemyGuard : state.playerGuard;
 
-      const oppGuardActive = who === PLAYER ? state.enemyGuard : state.playerGuard;
-
-      // Golpe básico
-      const baseDmg = 10;
-      const flip = tossCoin(0.5);          // "cara" | "cruz"
+      const baseDmg = 100;
+      const flip = tossCoin(0.5);
       const hitLanded = flip === "cara";
       let dmg = hitLanded ? baseDmg : 0;
 
       let guardInfo = null;
 
-      if (oppGuardActive) {
+      if (oppGuard) {
         if (hitLanded) {
-          // Guardia se activa → mitigación completa (cara) o 70% (cruz)
-          const gFlip = tossCoin(0.5);
+          const gFlip = tossCoin(0.5); // cara 100% | cruz 70%
           const mitigated = gFlip === "cara" ? 1.0 : 0.7;
           const finalDmg  = Math.max(0, Math.round(dmg * (1 - mitigated)));
-          if (finalDmg > 0) {
-            opp.hp = Math.max(0, opp.hp - finalDmg);
-          }
+          if (finalDmg > 0) opp.hp = Math.max(0, opp.hp - finalDmg);
 
-          // Se consume Guardia y entra CD
           if (who === PLAYER) { state.enemyGuard = false; state.enemyGuardCD = 1; }
           else                { state.playerGuard = false; state.playerGuardCD = 1; }
 
-          guardInfo = {
-            wasHit: true,
-            flip: gFlip,
-            mitigated,
-            finalDmg,
-            broke: true,
-            consumed: true,
-          };
-
-          dmg = 0; // daño “base” ya no se aplica tal cual (se reporta en guardInfo)
+          guardInfo = { wasHit: true, flip: gFlip, mitigated, finalDmg, consumed: true };
+          dmg = 0;
         } else {
-          // atacante falló → guardia permanece
           guardInfo = { wasHit: false, flip: null, consumed: false };
         }
       } else if (hitLanded) {
         opp.hp = Math.max(0, opp.hp - dmg);
       }
 
-      state.last = {
-        who,
-        action: "basic",
-        hitLanded,
-        dmg,
-        guarded: oppGuardActive,
-        guard: guardInfo,
-      };
+      state.last = { who, action: "basic", hitLanded, dmg, guarded: !!oppGuard, guard: guardInfo };
 
-      // ¿K.O.?
+      // KO / victoria / relevo forzado
       if (opp.hp <= 0) {
         const ended = handleKO(state, who === PLAYER ? ENEMY : PLAYER, who);
         if (ended) return;
       }
 
-      // Cambia turno normal
       const next = who === PLAYER ? ENEMY : PLAYER;
       advanceTurnWithAutoPass(state, next);
     },
 
-    /* UI: modo relevo */
+    /* UI Relevo */
     enterSwitch(state, { payload: who }) {
       if (state.phase !== "play" || state.turn !== who) return;
-      if (who === PLAYER && (!state.bench || state.bench.length === 0)) return;
-      if (who === PLAYER && state.playerGuard) return;  // no se puede relevar en guardia
+      if (who !== PLAYER) return;
+      if (!state.bench || state.bench.length === 0) return;
+      if (state.playerGuard) return;
       state.switchMode = true;
       state.last = { who, action: "enterSwitch" };
     },
@@ -229,31 +237,27 @@ const slice = createSlice({
     },
     switchTo(state, { payload: { who, index } }) {
       if (state.phase !== "play" || state.turn !== who) return;
+      if (who !== PLAYER) return;
       if (!state.switchMode) return;
+      if (!state.bench || index < 0 || index >= state.bench.length) return;
+      if (state.bench[index]?.defeated) return;
+      if (state.playerGuard) return;
 
-      if (who === PLAYER) {
-        if (!state.bench || index < 0 || index >= state.bench.length) return;
-        // No permitir KO
-        if (state.bench[index]?.defeated) return;
+      const incoming = state.bench[index];
+      const outgoing = state.player;
 
-        const incoming = state.bench[index];
-        const outgoing = state.player;
+      state.bench.splice(index, 1);
+      state.bench.push(outgoing);
+      state.player = incoming;
+      state.playerGuard = false;
 
-        state.bench.splice(index, 1);
-        state.bench.push(outgoing);
-        state.player = incoming;
+      state.last = { who, action: "switch", from: outgoing.id, to: incoming.id };
+      state.switchMode = false;
 
-        state.playerGuard = false; // al entrar otro, sin guardia activa
-
-        state.last = { who, action: "switch", switch: true, from: outgoing.id, to: incoming.id };
-        state.switchMode = false;
-        console.log("[SWITCH] from", outgoing.id, "to", incoming.id);
-
-        advanceTurnWithAutoPass(state, ENEMY);
-      }
+      advanceTurnWithAutoPass(state, ENEMY);
     },
 
-    /* Activar Guardia (sin CD aquí; el CD se aplica cuando SE USA) */
+    /* Guardia (CD se aplica cuando SE USA) */
     guard(state, { payload: who }) {
       if (state.phase !== "play" || state.turn !== who) return;
 
@@ -266,7 +270,6 @@ const slice = createSlice({
       }
 
       state.last = { who, action: "guard" };
-      console.log("[GUARD]", who, "→ active (CD se aplicará SOLO si se usa)");
       const next = who === PLAYER ? ENEMY : PLAYER;
       advanceTurnWithAutoPass(state, next);
     },
@@ -274,10 +277,10 @@ const slice = createSlice({
 });
 
 export const {
+  startLevel, nextLevel, nextDialog,
   reset, pass,
   enterSwitch, cancelSwitch, switchTo,
-  guard,
-  attackBasic,
+  guard, attackBasic,
 } = slice.actions;
 
 export default slice.reducer;

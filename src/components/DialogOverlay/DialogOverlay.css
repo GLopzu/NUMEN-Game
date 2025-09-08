@@ -1,0 +1,30 @@
+/* src/components/Dialog/DialogOverlay.css */
+.dlg{
+    position: absolute;
+    inset: 0;
+    display: grid;
+    align-content: end;
+    justify-items: center;
+    padding: 24px;
+    background: linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,.45) 100%);
+    z-index: 80;
+  }
+  .dlg__bubble{
+    max-width: min(920px, 90vw);
+    margin-bottom: 12px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: rgba(0,0,0,.55);
+    border: 1px solid rgba(255,255,255,.16);
+    color: #e8f0ff;
+    backdrop-filter: blur(3px);
+  }
+  .dlg__name{ font-weight: 900; margin-bottom: 6px; opacity: .9; }
+  .dlg__text{ font-size: 18px; line-height: 1.35; }
+  .dlg__next{
+    background: #fff; color:#111; border:0; border-radius:10px;
+    font-weight:900; padding: 10px 14px; cursor:pointer;
+  }
+  .dlg--player{ box-shadow: 0 0 0 2px rgba(126,218,255,.15) inset; }
+  .dlg--enemy { box-shadow: 0 0 0 2px rgba(255,126,126,.15) inset; }
+  

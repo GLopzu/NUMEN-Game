@@ -9,9 +9,28 @@ export const ARENAS = [
     {
       id: "arena2",
       name: "Caverna Helada",
-      src: "/arena/ice_cave.jpg",
+      src: "/assets/Arenas/Arena2.svg",
     },
-    // agrega más arenas aquí...
+    {
+      id: "arena3",
+      name: "Caverna Helada",
+      src: "/assets/Arenas/Arena3.svg",
+    },
+    {
+      id: "arena4",
+      name: "Caverna Helada",
+      src: "/assets/Arenas/Arena4.svg",
+    },
+    {
+      id: "arena5",
+      name: "Caverna Helada",
+      src: "/assets/Arenas/Arena5.svg",
+    },
+    {
+      id: "arena6",
+      name: "Caverna Helada",
+      src: "/assets/Arenas/Arena6.svg",
+    },
   ];
   
   export function getArena(id) {

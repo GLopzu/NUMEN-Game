@@ -1,5 +1,5 @@
 // src/components/Anim/NumenArt.jsx
-import "./numen-anim.css";
+import "./NumenArt.css";
 
 export default function NumenArt({ src, alt, side, anim = null, hit = false, swap = null }) {
   // melee lateral
