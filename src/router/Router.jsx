@@ -1,14 +1,16 @@
+// src/App.jsx
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import SelectNumen from "../pages/SelectNumen/SelectNumen"
-import NumenDuel from "../pages/NumenDuel/NumenDuel"
+import { Start, SelectNumen, NumenDuel } from "../pages/index";
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Navigate to="/select" replace />} />
+        <Route path="/" element={<Start />} />
         <Route path="/select" element={<SelectNumen />} />
         <Route path="/duel" element={<NumenDuel />} />
+        {/* fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );
