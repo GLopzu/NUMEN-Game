@@ -17,7 +17,7 @@ export default function SwitchTray({
   return (
     <div className={`switch-tray ${stateClass}`}>
       <div className="switch-tray__header">
-        <div className="switch-tray__title">Banca (pulsa Relevo para cambiar)</div>
+        <div className="switch-tray__title"></div>
         {enabled ? (
           <button className="switch-tray__close" onClick={onCancel} title="Cancelar relevo">✕</button>
         ) : null}

@@ -1,12 +1,12 @@
 /* Ataques */
 @keyframes meleePlayer {
   0% { transform: translateX(0) scale(1); }
-  45% { transform: translateX(-120px) scale(1.06); }
+  45% { transform: translateX(-620px) scale(1.06); }
   100% { transform: translateX(0) scale(1); }
 }
 @keyframes meleeEnemy {
   0% { transform: translateX(0) scale(1); }
-  45% { transform: translateX(120px) scale(1.06); }
+  45% { transform: translateX(620px) scale(1.06); }
   100% { transform: translateX(0) scale(1); }
 }
 .anim-attack--player { animation: meleePlayer 650ms cubic-bezier(.2,.6,.2,1) both; transform-origin: center bottom; }

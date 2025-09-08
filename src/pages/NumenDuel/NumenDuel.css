@@ -24,17 +24,3 @@
 }
 
 /* ===== Log ===== */
-.log {
-  position: absolute;
-  left: 50%; bottom: 24px;
-  transform: translateX(-50%);
-  width: min(720px, 90vw);
-  background: var(--panel-bg);
-  border: 1px solid var(--panel-border);
-  border-radius: 12px;
-  padding: 10px 14px;
-  backdrop-filter: blur(3px);
-  font-weight: 600;
-  color: #e8eefc;
-}
-.log p { margin: 4px 0; opacity: .95; }

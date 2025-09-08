@@ -184,7 +184,7 @@ const slice = createSlice({
       const opp = who === PLAYER ? state.enemy  : state.player;
       const oppGuard = who === PLAYER ? state.enemyGuard : state.playerGuard;
 
-      const baseDmg = 100;
+      const baseDmg = 20;
       const flip = tossCoin(0.5);
       const hitLanded = flip === "cara";
       let dmg = hitLanded ? baseDmg : 0;

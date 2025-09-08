@@ -1,4 +1,5 @@
 // src/components/Log/CombatLog.jsx
+import "./CombatLog.css"
 export default function CombatLog({ phase, turn, last, usesLeft }) {
   const rows = [];
 

@@ -20,7 +20,7 @@
     backdrop-filter: blur(3px);
   }
   .dlg__name{ font-weight: 900; margin-bottom: 6px; opacity: .9; }
-  .dlg__text{ font-size: 18px; line-height: 1.35; }
+  .dlg__text{ font-size: 32px; line-height: 1.35; }
   .dlg__next{
     background: #fff; color:#111; border:0; border-radius:10px;
     font-weight:900; padding: 10px 14px; cursor:pointer;
