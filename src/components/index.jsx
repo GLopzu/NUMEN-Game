@@ -8,6 +8,8 @@ export { default as CombatLog }     from "./Log/CombatLog";
 export { default as ExitButton }    from "./Exit/ExitButton";
 export { default as SwitchTray }    from "./SwitchTray/SwitchTray";
 export { default as DialogOverlay } from "./DialogOverlay/DialogOverlay";
+export { default as ResultPopup }   from "./ResultPopup/ResultPopup";
+export { default as KOOverlay }     from "./KOOverlay/KOOverlay";
 
 // hooks
 export { default as useNumenAnim }  from "./Anim/useNumenAnim";

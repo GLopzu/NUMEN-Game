@@ -8,35 +8,25 @@ export default function PlayerSide({
   art = null,
   hit = false,
   anim = null,
-  swap = null,        // <-- NUEVO: 'out' | 'in' | 'enter' | null
+  swap = null,
   children = null,
 }) {
   const isAttack = anim === "melee" || anim === "attack";
-  const attackClass = isAttack ? "anim-attack--player" : "";
-  const swapClass =
-    swap === "out"
-      ? "anim-switch-out--player"
-      : swap === "in" || swap === "enter"
-      ? "anim-switch-in--player"
-      : "";
+  const animClass = isAttack ? "anim-attack--player" : "";
+  const swapClass = swap === "in" ? "anim-switch-in" : swap === "out" ? "anim-switch-out" : "";
 
   return (
     <section className="side side--player">
-      {/* Arte anclado abajo-izquierda del contenedor */}
-      <div className={`side__art ${attackClass} ${swapClass} ${hit ? "is-hit" : ""}`.trim()}>
+      <div className={`side__art ${animClass} ${swapClass} ${hit ? "is-hit" : ""}`.trim()}>
         {art ? <img src={art} alt="Jugador" /> : null}
       </div>
 
-      {/* HUD FIJO (no depende del tamaño del arte) */}
       <div className="hud hud--player">
-        <div className={`hp-badge ${hit ? "is-hit" : ""}`}>
+        <div className="hp-badge">
           {hp ?? 0}
           <span className="hp-badge__unit">·pdv</span>
         </div>
-
-        <div className="hud__menu">
-          {children /* BattleMenu (ya trae className="battle-menu") */}
-        </div>
+        <div className="hud__menu">{children}</div>
       </div>
     </section>
   );

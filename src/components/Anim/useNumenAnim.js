@@ -1,59 +1,57 @@
 // src/components/Anim/useNumenAnim.js
-import { useState, useRef, useCallback } from "react";
-
-const DUR = {
-  melee: 650,
-  hit: 320,
-  switchOut: 350,
-  switchIn: 450,
-  enter: 450,
-};
+import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 
 export default function useNumenAnim() {
-  const [anim, setAnim] = useState(null);   // 'melee' | 'attack' | null
-  const [hit, setHit] = useState(false);
-  const [swap, setSwap] = useState(null);   // 'out' | 'in' | 'enter' | null
-  const timers = useRef([]);
+  const [anim, setAnim] = useState(null);  // 'attack' | null
+  const [hit, setHit]   = useState(false); // true cuando recibe golpe
+  const [swap, setSwap] = useState(null);  // 'in' | 'out' | null
 
-  const withTimer = (fn, ms) => {
-    const t = setTimeout(fn, ms);
-    timers.current.push(t);
-    return t;
-  };
+  // refs para limpiar timeouts
+  const timers = useRef(new Set());
+  const addTimer = (id) => { timers.current.add(id); };
+  const clearAll = () => { for (const id of timers.current) clearTimeout(id); timers.current.clear(); };
 
-  const triggerMelee = () => {
-    setAnim("melee");
-    withTimer(() => setAnim(null), DUR.melee + 10);
-  };
+  useEffect(() => clearAll, []); // limpiar al desmontar
 
-  const triggerHit = () => {
+  const triggerMelee = useCallback(() => {
+    setAnim("attack");
+    const t = setTimeout(() => setAnim(null), 680);
+    addTimer(t);
+  }, []);
+
+  const triggerHit = useCallback(() => {
     setHit(true);
-    withTimer(() => setHit(false), DUR.hit + 10);
-  };
-
-  const triggerEnter = () => {
-    setSwap("enter");
-    withTimer(() => setSwap(null), DUR.enter + 10);
-  };
+    const t = setTimeout(() => setHit(false), 320);
+    addTimer(t);
+  }, []);
 
   const startSwitchOut = useCallback(() => {
-    setSwap("out");
     return new Promise((resolve) => {
-      withTimer(() => { setSwap(null); resolve(); }, DUR.switchOut);
+      setSwap("out");
+      const t = setTimeout(() => { setSwap(null); resolve(); }, 280);
+      addTimer(t);
     });
   }, []);
 
   const startSwitchIn = useCallback(() => {
-    setSwap("in");
     return new Promise((resolve) => {
-      withTimer(() => { setSwap(null); resolve(); }, DUR.switchIn);
+      setSwap("in");
+      const t = setTimeout(() => { setSwap(null); resolve(); }, 380);
+      addTimer(t);
     });
   }, []);
 
-  return {
+  const triggerEnter = useCallback(() => {
+    setSwap("in");
+    const t = setTimeout(() => setSwap(null), 400);
+    addTimer(t);
+  }, []);
+
+  // devolver un objeto estable (misma identidad entre renders)
+  return useMemo(() => ({
     anim, hit, swap,
-    triggerMelee, triggerHit, triggerEnter,
+    triggerMelee, triggerHit,
     startSwitchOut, startSwitchIn,
-    DUR,
-  };
+    triggerEnter,
+  }), [anim, hit, swap, triggerMelee, triggerHit, startSwitchOut, startSwitchIn, triggerEnter]);
 }

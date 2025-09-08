@@ -1,6 +1,6 @@
 // src/pages/NumenDuel.jsx
 import { useDispatch, useSelector } from "react-redux";
-import { useMemo, useEffect } from "react";
+import { useMemo, useEffect, useState } from "react";
 import {
   startLevel, nextLevel, nextDialog,
   pass, consts,
@@ -9,6 +9,7 @@ import {
 } from "../../store/duelSlice";
 import { getArena } from "../../data/arenas";
 import { getLevel, getNextLevelId, DEFAULT_LEVEL_ID } from "../../data/levels";
+import { getNumen } from "../../data/numens";
 
 import {
   BattleMenu,
@@ -18,6 +19,8 @@ import {
   ExitButton,
   SwitchTray,
   DialogOverlay,
+  ResultPopup,
+  KOOverlay,
   useNumenAnim,
 } from "../../components";
 
@@ -29,19 +32,16 @@ export default function NumenDuel() {
   const dispatch = useDispatch();
   const st = useSelector((s) => s.duel);
 
-  // Datos de nivel / arena
   const level = useMemo(() => getLevel(st.levelId || DEFAULT_LEVEL_ID), [st.levelId]);
   const arena  = useMemo(() => getArena(st.arenaId || level.arena), [st.arenaId, level.arena]);
   const arenaSrc = arena?.src;
 
-  // Arte por turno (tu Numen usa 'select' en tu turno)
   const playerArt =
     (st.phase === "play" && st.turn === PLAYER
       ? st.player?.select || st.player?.idle
       : st.player?.idle || st.player?.select) || null;
   const enemyArt = st.enemy?.Enemy || st.enemy?.idle || null;
 
-  // Habilitadores de acciones
   const playerIsGuard = !!st.playerGuard;
   const playerGuardCD = st.playerGuardCD || 0;
 
@@ -50,29 +50,25 @@ export default function NumenDuel() {
   const canSwitch = st.phase === "play" && st.turn === PLAYER && hasBench && !playerIsGuard;
   const canGuard  = st.phase === "play" && st.turn === PLAYER && !playerIsGuard && playerGuardCD === 0;
 
-  // Siguiente nivel
   const nextId = getNextLevelId(st.levelId || DEFAULT_LEVEL_ID);
   const hasNextLevel = !!nextId;
   const isFinalVictory = st.phase === "over" && st.winner === "PLAYER" && !hasNextLevel;
 
-  // Animaciones
   const playerAnim = useNumenAnim();
   const enemyAnim  = useNumenAnim();
 
-  // Autocarga del nivel si algo no cuadra
-  useEffect(() => {
-    if (!st.levelId) dispatch(startLevel(DEFAULT_LEVEL_ID));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Overlay de KO (imagen y lado)
+  const [koOverlay, setKoOverlay] = useState(null); // { side: 'player'|'enemy', src }
 
-  // Efecto al montar
+  // animación de entrada al montar
   useEffect(() => {
     playerAnim.triggerEnter();
     enemyAnim.triggerEnter();
+    // deps vacías para que solo ocurra una vez
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Auto-pass si el jugador está en guardia en su propio turno
+  // Autopass si jugador está en guardia en su turno
   useEffect(() => {
     if (st.phase !== "play" || st.turn !== PLAYER) return;
     if (!st.playerGuard) return;
@@ -81,7 +77,7 @@ export default function NumenDuel() {
     return () => clearTimeout(t);
   }, [st.phase, st.turn, st.playerGuard, st.switchMode, dispatch]);
 
-  // IA simple del enemigo
+  // IA muy simple (NO dependas de playerAnim/enemyAnim para evitar bucles)
   useEffect(() => {
     if (st.phase !== "play" || st.turn !== ENEMY) return;
 
@@ -93,9 +89,33 @@ export default function NumenDuel() {
     }, 600);
 
     return () => clearTimeout(t);
-  }, [st.phase, st.turn, st.enemyGuard, st.turnTick, st.last?.after?.autopass, dispatch, enemyAnim, playerAnim]);
+    // dependencias SOLO de estado redux/dispatch
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [st.phase, st.turn, st.enemyGuard, st.turnTick, st.last?.after?.autopass, dispatch]);
 
-  // Acciones UI
+  // KO -> overlay de “muerte” + animación de “in” del nuevo Numen
+  useEffect(() => {
+    if (st.last?.action !== "koSwitch") return;
+
+    const { target, from } = st.last;
+    const base = getNumen(from);
+    const src =
+      target === "ENEMY"
+        ? (base?.Enemy || base?.idle)
+        : (base?.select || base?.idle);
+
+    setKoOverlay({ side: target === "ENEMY" ? "enemy" : "player", src });
+    const clear = setTimeout(() => setKoOverlay(null), 520);
+
+    // animación de entrada del reemplazo (no metas handlers en deps)
+    if (target === "ENEMY") enemyAnim.startSwitchIn();
+    else                    playerAnim.startSwitchIn();
+
+    return () => clearTimeout(clear);
+    // depende SOLO de la acción
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [st.last?.action]);
+
   const doAttack = () => {
     if (!canAttack) return;
     playerAnim.triggerMelee();
@@ -110,7 +130,10 @@ export default function NumenDuel() {
     >
       <ExitButton href="/select" />
 
-      {/* Lado enemigo (izquierda) */}
+      {/* KO Overlay (muerte global) */}
+      {koOverlay ? <KOOverlay side={koOverlay.side} src={koOverlay.src} /> : null}
+
+      {/* Enemigo */}
       <EnemySide
         hp={st.enemy?.hp}
         art={enemyArt}
@@ -119,7 +142,7 @@ export default function NumenDuel() {
         swap={enemyAnim.swap}
       />
 
-      {/* Lado jugador (derecha) */}
+      {/* Jugador */}
       <PlayerSide
         hp={st.player?.hp}
         art={playerArt}
@@ -139,12 +162,11 @@ export default function NumenDuel() {
         />
       </PlayerSide>
 
-      {/* Banca (relevo) */}
+      {/* Banca */}
       <SwitchTray
         enabled={st.switchMode}
         bench={st.bench || []}
         onChoose={async (idx) => {
-          // animación de salida/entrada si tu hook las implementa
           if (playerAnim.startSwitchOut) await playerAnim.startSwitchOut();
           dispatch(switchTo({ who: PLAYER, index: idx }));
           if (playerAnim.startSwitchIn) await playerAnim.startSwitchIn();
@@ -152,22 +174,15 @@ export default function NumenDuel() {
         onCancel={() => dispatch(cancelSwitch())}
       />
 
-      {/* Log inferior (con final de juego si aplica) */}
+      {/* Log (sin mensajes de fin de partida) */}
       <CombatLog
         phase={st.phase}
         turn={st.turn}
-        usesLeft={null}
-        winner={st.winner}
         last={st.last}
-        onReset={() => dispatch(startLevel(st.levelId || DEFAULT_LEVEL_ID))}
-        hasNextLevel={hasNextLevel}
-        onNextLevel={() => dispatch(nextLevel())}
-        isFinalVictory={isFinalVictory}
-        onFinalRestart={() => dispatch(startLevel(DEFAULT_LEVEL_ID))}
-        onGoToMenu={() => { window.location.href = "/select"; }}
+        usesLeft={null}
       />
 
-      {/* Diálogo de introducción del nivel */}
+      {/* Intro de nivel */}
       {st.phase === "intro" ? (
         <DialogOverlay
           lines={st.dialogQueue}
@@ -175,6 +190,20 @@ export default function NumenDuel() {
           onNext={() => dispatch(nextDialog())}
         />
       ) : null}
+
+      {/* Popup de resultado */}
+      <ResultPopup
+        visible={st.phase === "over"}
+        type={
+          st.winner === "PLAYER"
+            ? (isFinalVictory ? "final" : "win")
+            : "defeat"
+        }
+        levelName={level?.name || ""}
+        onNextLevel={() => dispatch(nextLevel())}
+        onRestartAll={() => dispatch(startLevel(DEFAULT_LEVEL_ID))}
+        onExit={() => { window.location.href = "/select"; }}
+      />
     </main>
   );
 }
